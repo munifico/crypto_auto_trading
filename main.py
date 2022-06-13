@@ -197,11 +197,14 @@ class Trader:
         for data in data_dict:
             res = self.check_more_buyable(data_dict[data])
 
+            if data in self.buy_blocker and self.buy_blocker[data].minute == data_dict[data].index[-1].minute:
+                continue
+
             # 추가 매수조건 통과, 티커 보유, 미체결 없음 충족 시 buy_more_list_dict에 추가
             if res \
                     and data in self.balances \
-                    and data not in self.open_orders \
-                    and self.buy_blocker[data].minute != data_dict[data].index[-1].minute:
+                    and data not in self.open_orders:
+
                 buy_more_list_dict[data] = {'buy_price': res[0], 'size': res[1], 'volatility': res[2]}
 
         return self.pick_final_buy(buy_more_list_dict, 'volatility', 99)
@@ -213,11 +216,14 @@ class Trader:
         for data in data_dict:
             res = self.check_sellable(data_dict[data], data)
 
+            if data in self.buy_blocker and self.buy_blocker[data].minute == data_dict[data].index[-1].minute:
+                continue
+
             # 매도조건 통과, 티커 보유, 미체결 없음 충족 시 sell_list_dict에 추가
             if res \
                     and data in self.balances \
-                    and data not in self.open_orders \
-                    and self.buy_blocker[data].minute != data_dict[data].index[-1].minute:
+                    and data not in self.open_orders:
+
                 sell_list_dict[data] = {'sell_price': res[0], 'size': self.balances[data]['balance']}
 
         return self.pick_final_sell(sell_list_dict)
