@@ -5,7 +5,6 @@ import config
 import pyupbit
 import talib
 
-
 class Trader:
     open_order_dict = {}
 
@@ -308,7 +307,7 @@ class Trader:
 
         # 시그널 발생 여부 체크
         if max(data['close'][-8:-3]) * 1.03 <= data['close'][-2]:
-            return [data['open'][-1], self.balances[ticker]['balance'], volatility]
+            return [data['close'][-1], self.balances[ticker]['balance'], volatility]
 
         return False
 
