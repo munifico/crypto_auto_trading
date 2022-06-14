@@ -11,7 +11,7 @@ class Trader:
     def __init__(self, access, secret):
 
         self.total_seed = 0  # get_balances 메소드 실행 시 조회 됨
-        self.split = 10  # 포지션 사이즈 유지를 위해 1 split은 남겨두므로 보유하고 싶은 수량의 + 1을 입력해야 함
+        self.split = 16  # 포지션 사이즈 유지를 위해 1 split은 남겨두므로 보유하고 싶은 수량의 + 1을 입력해야 함
         self.pos_size = 10000
 
         self.balances = {}
@@ -31,14 +31,13 @@ class Trader:
         while True:
 
             now = datetime.datetime.now()
+            
+            self.get_balances()  # 잔고 조회
 
             # 매수, 매도 방해를 피하기 위해 특정 시간에만 ticker 리스트 갱신
             if now.minute in config.config['time_check']:
-                self.get_tickers()
-
-            self.get_balances()  # 잔고 조회
-
-            print(len(self.balances))
+                self.get_tickers()  # 티커 갱신
+                self.resize_position(0.1)  # 포지션 사이즈 재설정 (ex. 0.1 == 10%)
 
             data = self.get_datas(self.tickers)  # 매수 분석용 데이터 조회
 
@@ -269,12 +268,11 @@ class Trader:
         # 지표 리스트
         atr = talib.ATR(data['high'], data['low'], data['close'], timeperiod=20)
         volatility = atr[-2] / data['close'][-2]
-        SMA_slow = talib.SMA(data['close'], timeperiod=21)
 
         # 시그널 발생 여부 체크
         if data['value'][-2] >= 300000000 \
-                and data['close'][-32] > SMA_slow[-2] \
-                and data['close'][-2] < SMA_slow[-2] * 0.97:
+                and data['close'][-31] > data['close'][-2] \
+                and data['close'][-11] * 0.95 >= data['close'][-2]:
             return [data['open'][-1], self.pos_size / data['open'][-1], volatility]
 
         return False
@@ -306,9 +304,10 @@ class Trader:
         # 지표 리스트
         atr = talib.ATR(data['high'], data['low'], data['close'], timeperiod=20)
         volatility = atr[-2] / data['close'][-2]
+        SMA_slow = talib.SMA(data['close'], timeperiod=200)
 
         # 시그널 발생 여부 체크
-        if max(data['close'][-8:-3]) * 1.03 <= data['close'][-2]:
+        if SMA_slow[-2] <= data['close'][-2]:
             return [data['close'][-1], self.balances[ticker]['balance'], volatility]
 
         return False
@@ -322,7 +321,6 @@ class Trader:
         if ret:
             self.record_open_order(ret, ticker)
             print('매수', ret)
-
 
     def sell(self, ticker, price, size):
 
@@ -447,6 +445,21 @@ class Trader:
             holding_tickers.append(ticker)
 
         return holding_tickers
+
+    def resize_position(self, percent):
+        """
+        토탈 시드머니 증가량을 체크해서 포지션 사이즈를 재설정함
+        :param percent: 증가량 
+        :return: -
+        """
+
+        if self.total_seed / self.pos_size >= self.split + percent:
+
+            before_pos_size = self.pos_size
+
+            self.pos_size = self.total_seed / self.split
+
+            print(f'포지션 사이즈가 재설정 됩니다. {format(before_pos_size, ",")}원 => {format(self.pos_size, ",")}원')
 
 
 trader = Trader(access=config.config['access'], secret=config.config['secret'])
