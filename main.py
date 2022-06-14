@@ -31,13 +31,13 @@ class Trader:
         while True:
 
             now = datetime.datetime.now()
-            
+
             self.get_balances()  # 잔고 조회
+            self.resize_position(0.1)  # 포지션 사이즈 재설정 (ex. 0.1 == 10%)
 
             # 매수, 매도 방해를 피하기 위해 특정 시간에만 ticker 리스트 갱신
             if now.minute in config.config['time_check']:
                 self.get_tickers()  # 티커 갱신
-                self.resize_position(0.1)  # 포지션 사이즈 재설정 (ex. 0.1 == 10%)
 
             data = self.get_datas(self.tickers)  # 매수 분석용 데이터 조회
 
@@ -423,7 +423,7 @@ class Trader:
 
         balances = self.upbit.get_balances()
 
-        self.total_seed = balances[0]['balance']
+        self.total_seed = int(float(balances[0]['balance']))
 
         for idx, balance in enumerate(balances):
             ticker = "KRW" + '-' + balances[idx]['currency']
@@ -457,7 +457,7 @@ class Trader:
 
             before_pos_size = self.pos_size
 
-            self.pos_size = self.total_seed / self.split
+            self.pos_size = int(self.total_seed / self.split)
 
             print(f'포지션 사이즈가 재설정 됩니다. {format(before_pos_size, ",")}원 => {format(self.pos_size, ",")}원')
 
