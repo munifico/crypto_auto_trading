@@ -38,6 +38,8 @@ class Trader:
 
             self.get_balances()  # 잔고 조회
 
+            print(len(self.balances))
+
             data = self.get_datas(self.tickers)  # 매수 분석용 데이터 조회
 
             buy_list = self.get_buy_list(data)  # 매수 티커 리스트
@@ -238,7 +240,7 @@ class Trader:
         """
         final_buy = {}
 
-        if len(buy_list_dict) > 0:
+        if len(buy_list_dict) > 0 and count > 0:
             if len(buy_list_dict) > count:
                 final_buy = sorted(buy_list_dict.items(), key=lambda x: x[1][attr], reverse=True)[:count]
 
